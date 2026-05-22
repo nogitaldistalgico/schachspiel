@@ -13,7 +13,7 @@
 
 'use strict';
 
-const Chess = window.Chess || {};
+var Chess = window.Chess || {};
 
 class ChessBoard {
     /**

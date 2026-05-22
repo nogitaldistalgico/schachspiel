@@ -15,7 +15,7 @@
 
 'use strict';
 
-const Chess = window.Chess || {};
+var Chess = window.Chess || {};
 
 class ChessEngine {
     constructor(fen = Chess.STARTING_FEN) {

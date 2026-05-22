@@ -7,7 +7,7 @@
 
 'use strict';
 
-const Chess = window.Chess || {};
+var Chess = window.Chess || {};
 
 Chess.PIECE_SVGS = {
     // ── WHITE PAWN ──────────────────────────────────────────────────

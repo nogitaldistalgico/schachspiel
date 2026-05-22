@@ -7,7 +7,7 @@
 
 'use strict';
 
-const Chess = window.Chess || {};
+var Chess = window.Chess || {};
 
 // ── Piece Colors ──────────────────────────────────────────────────────
 Chess.WHITE = 0;
