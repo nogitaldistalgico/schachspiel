@@ -205,40 +205,27 @@ class ChessBoard {
      */
     flip() {
         this.isFlipped = !this.isFlipped;
+        
+        // Add flipping class to enable smooth transition times for pieces during board rotate
+        this.container.classList.add('flipping');
         this.container.classList.toggle('flipped', this.isFlipped);
         this.updateLabels();
         
-        // Re-apply correct positioning styles on squares & pieces
-        const squares = this.boardEl.querySelectorAll('.square');
-        squares.forEach(sq => {
-            const rank = parseInt(sq.dataset.rank, 10);
-            const file = parseInt(sq.dataset.file, 10);
-            const pos = this.getVisualCoords(rank, file);
-            sq.style.left = `${pos.x * 12.5}%`;
-            sq.style.top = `${pos.y * 12.5}%`;
-            
-            // Adjust light/dark square colors
-            sq.className = 'square ' + (((rank + file) % 2 === 0) ? 'dark' : 'light');
-        });
-
         this.draw();
+
+        setTimeout(() => {
+            this.container.classList.remove('flipping');
+        }, 600);
     }
 
     /**
      * Converts engine grid indices [rank, file] into visual board grid percentages.
      */
     getVisualCoords(rank, file) {
-        if (this.isFlipped) {
-            return {
-                x: 7 - file,
-                y: rank
-            };
-        } else {
-            return {
-                x: file,
-                y: 7 - rank
-            };
-        }
+        return {
+            x: file,
+            y: 7 - rank
+        };
     }
 
     /**
@@ -337,8 +324,9 @@ class ChessBoard {
         el.dataset.file = file;
 
         if (this.dragState.pieceEl !== el) {
-            // Apply CSS transform animation
-            el.style.transform = `translate3d(${pos.x * 100}%, ${pos.y * 100}%, 0)`;
+            // Apply CSS transform animation and rotate if flipped
+            const rotation = this.isFlipped ? ' rotate(-180deg)' : '';
+            el.style.transform = `translate3d(${pos.x * 100}%, ${pos.y * 100}%, 0)${rotation}`;
         }
     }
 
@@ -432,8 +420,12 @@ class ChessBoard {
             const dx = this.dragState.currentX - this.dragState.startX;
             const dy = this.dragState.currentY - this.dragState.startY;
 
-            // Apply direct coordinate translation
-            this.dragState.pieceEl.style.transform = `translate3d(${dx}px, ${dy}px, 10px)`;
+            // Apply direct coordinate translation, inverting delta if board is rotated
+            const multiplier = this.isFlipped ? -1 : 1;
+            const finalDx = dx * multiplier;
+            const finalDy = dy * multiplier;
+            const rotation = this.isFlipped ? ' rotate(-180deg)' : '';
+            this.dragState.pieceEl.style.transform = `translate3d(${finalDx}px, ${finalDy}px, 10px)${rotation}`;
         };
 
         const onDragEnd = (e) => {
@@ -573,6 +565,13 @@ class ChessBoard {
 
         // Handle Pawn Promotion options
         if (move.flags === 'p') {
+            // Visually place the pawn on the target square during the promotion prompt
+            const pieceEl = this.pieceElements.get(move.piece.id);
+            if (pieceEl) {
+                const pos = this.getVisualCoords(to[0], to[1]);
+                const rotation = this.isFlipped ? ' rotate(-180deg)' : '';
+                pieceEl.style.transform = `translate3d(${pos.x * 100}%, ${pos.y * 100}%, 0)${rotation}`;
+            }
             const promoChoice = await this.promptPromotion(this.engine.activeColor);
             move.promotion = promoChoice;
         }

@@ -53,33 +53,6 @@
             <div class="settings-section">
                 
                 <div class="setting-row">
-                    <label for="game-mode">Game Mode</label>
-                    <select id="game-mode">
-                        <option value="pvp">Player vs Player (Local)</option>
-                        <option value="pve" selected>Player vs AI (Engine)</option>
-                    </select>
-                </div>
-
-                <div class="setting-row" id="difficulty-group">
-                    <label for="ai-difficulty">AI Difficulty</label>
-                    <select id="ai-difficulty">
-                        <option value="easy">Easy (Depth 1)</option>
-                        <option value="medium" selected>Medium (Depth 2)</option>
-                        <option value="hard">Hard (Depth 3)</option>
-                        <option value="expert">Expert (Depth 4)</option>
-                    </select>
-                </div>
-
-                <div class="setting-row" id="color-group">
-                    <label for="player-color">Play As</label>
-                    <select id="player-color">
-                        <option value="white" selected>White</option>
-                        <option value="black">Black</option>
-                        <option value="random">Random Color</option>
-                    </select>
-                </div>
-
-                <div class="setting-row">
                     <label for="timer-setting">Time Control</label>
                     <select id="timer-setting">
                         <option value="none">No Time Limit</option>
@@ -91,13 +64,34 @@
                     </select>
                 </div>
 
+                <div class="setting-row">
+                    <label for="board-theme">Board Theme</label>
+                    <select id="board-theme">
+                        <option value="forest" selected>Forest Green</option>
+                        <option value="neon">Cyberpunk Neon</option>
+                        <option value="wood">Walnut Wood</option>
+                        <option value="glass">Ice Glass</option>
+                        <option value="gold">Midnight Gold</option>
+                    </select>
+                </div>
+
+                <div class="setting-row">
+                    <label for="auto-flip">Auto-Flip Board</label>
+                    <select id="auto-flip">
+                        <option value="yes" selected>Yes (Rotate on Turn)</option>
+                        <option value="no">No (White always bottom)</option>
+                    </select>
+                </div>
+
             </div>
 
             <!-- Toolbar Buttons -->
             <div class="control-buttons">
-                <button class="btn-primary" id="btn-restart">Restart Match</button>
+                <button class="btn-primary" id="btn-restart" style="grid-column: span 2;">Restart Match</button>
                 <button class="btn-secondary" id="btn-undo">Undo Move</button>
-                <button class="btn-secondary" id="btn-flip" style="grid-column: span 2;">Flip View</button>
+                <button class="btn-secondary" id="btn-flip">Flip View</button>
+                <button class="btn-secondary" id="btn-draw" style="background: rgba(255, 255, 255, 0.05);">Offer Draw</button>
+                <button class="btn-secondary" id="btn-resign" style="background: rgba(235, 64, 52, 0.15); color: #ff6b6b;">Resign</button>
             </div>
 
             <!-- Live Match Move Log Grid -->
@@ -143,13 +137,22 @@
             <button class="btn-primary" id="btn-game-over-restart" style="margin-top: 10px; padding: 12px 30px;">Play Again</button>
         </div>
 
+        <!-- ── CONFIRMATION MODAL DIALOG (HIDDEN BY DEFAULT) ── -->
+        <div class="overlay-backdrop hidden" id="confirm-overlay">
+            <h2 id="confirm-title">Are you sure?</h2>
+            <p id="confirm-reason">This action cannot be undone.</p>
+            <div class="confirm-buttons" style="display: flex; gap: 15px; margin-top: 15px;">
+                <button class="btn-primary" id="btn-confirm-yes" style="padding: 10px 25px;">Yes</button>
+                <button class="btn-secondary" id="btn-confirm-no" style="padding: 10px 25px;">No</button>
+            </div>
+        </div>
+
     </main>
 
     <!-- Chess Application Modular Scripts -->
     <script src="js/constants.js"></script>
     <script src="js/pieces.js"></script>
     <script src="js/engine.js"></script>
-    <script src="js/ai.js"></script>
     <script src="js/board.js"></script>
     <script src="js/app.js"></script>
 

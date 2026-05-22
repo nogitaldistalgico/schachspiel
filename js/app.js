@@ -12,12 +12,6 @@ const Chess = window.Chess || {};
 class ChessApp {
     constructor() {
         this.engine = new ChessEngine();
-        this.ai = new ChessAI();
-
-        // Game Configuration
-        this.gameMode = 'pvp'; // 'pvp' or 'pve'
-        this.aiDifficulty = 'medium';
-        this.playerColor = Chess.WHITE; // White by default in PvE
 
         // Timers
         this.timerConfig = {
@@ -34,17 +28,16 @@ class ChessApp {
         // UI DOM Elements Cache
         this.dom = {
             boardContainer: document.getElementById('board-container'),
-            gameModeSelect: document.getElementById('game-mode'),
-            difficultySelect: document.getElementById('ai-difficulty'),
-            difficultyGroup: document.getElementById('difficulty-group'),
-            playerColorSelect: document.getElementById('player-color'),
-            colorGroup: document.getElementById('color-group'),
             timerSelect: document.getElementById('timer-setting'),
+            boardThemeSelect: document.getElementById('board-theme'),
+            autoFlipSelect: document.getElementById('auto-flip'),
             
             // Buttons
             restartBtn: document.getElementById('btn-restart'),
             undoBtn: document.getElementById('btn-undo'),
             flipBtn: document.getElementById('btn-flip'),
+            drawBtn: document.getElementById('btn-draw'),
+            resignBtn: document.getElementById('btn-resign'),
             exportFenBtn: document.getElementById('btn-export-fen'),
             importFenBtn: document.getElementById('btn-import-fen'),
             importPgnBtn: document.getElementById('btn-import-pgn'),
@@ -64,6 +57,12 @@ class ChessApp {
             gameOverReason: document.getElementById('game-over-reason'),
             gameOverRestartBtn: document.getElementById('btn-game-over-restart'),
             
+            confirmOverlay: document.getElementById('confirm-overlay'),
+            confirmTitle: document.getElementById('confirm-title'),
+            confirmReason: document.getElementById('confirm-reason'),
+            confirmYesBtn: document.getElementById('btn-confirm-yes'),
+            confirmNoBtn: document.getElementById('btn-confirm-no'),
+            
             // Clipboard text areas
             fenInput: document.getElementById('fen-io-box'),
             pgnInput: document.getElementById('pgn-io-box')
@@ -75,29 +74,14 @@ class ChessApp {
         });
 
         this.setupEventListeners();
+        
+        // Initial theme setup
+        this.changeTheme(this.dom.boardThemeSelect.value);
+        
         this.resetGame();
     }
 
     setupEventListeners() {
-        // Mode change handlers
-        this.dom.gameModeSelect.addEventListener('change', (e) => {
-            this.gameMode = e.target.value;
-            const isPve = (this.gameMode === 'pve');
-            this.dom.difficultyGroup.classList.toggle('hidden', !isPve);
-            this.dom.colorGroup.classList.toggle('hidden', !isPve);
-            this.resetGame();
-        });
-
-        this.dom.difficultySelect.addEventListener('change', (e) => {
-            this.aiDifficulty = e.target.value;
-        });
-
-        this.dom.playerColorSelect.addEventListener('change', (e) => {
-            const val = e.target.value;
-            this.playerColor = (val === 'white') ? Chess.WHITE : (val === 'black') ? Chess.BLACK : 'random';
-            this.resetGame();
-        });
-
         this.dom.timerSelect.addEventListener('change', (e) => {
             const val = e.target.value;
             if (val === 'none') {
@@ -111,6 +95,10 @@ class ChessApp {
             this.resetGame();
         });
 
+        this.dom.boardThemeSelect.addEventListener('change', (e) => {
+            this.changeTheme(e.target.value);
+        });
+
         // Button Click handlers
         this.dom.restartBtn.addEventListener('click', () => this.resetGame());
         this.dom.gameOverRestartBtn.addEventListener('click', () => {
@@ -120,6 +108,8 @@ class ChessApp {
 
         this.dom.undoBtn.addEventListener('click', () => this.handleUndo());
         this.dom.flipBtn.addEventListener('click', () => this.board.flip());
+        this.dom.drawBtn.addEventListener('click', () => this.promptDrawOffer());
+        this.dom.resignBtn.addEventListener('click', () => this.promptResignation());
 
         this.dom.exportFenBtn.addEventListener('click', () => {
             const fen = this.engine.generateFen();
@@ -135,6 +125,15 @@ class ChessApp {
             try {
                 this.engine.load(fen);
                 this.board.deselect();
+                
+                // Align manually loaded FEN turn to correct flip state if auto-flip is on
+                if (this.dom.autoFlipSelect.value === 'yes') {
+                    const expectedFlip = (this.engine.activeColor === Chess.BLACK);
+                    if (this.board.isFlipped !== expectedFlip) {
+                        this.board.flip();
+                    }
+                }
+                
                 this.board.draw();
                 this.syncGameUi();
                 this.resetTimerState();
@@ -151,42 +150,32 @@ class ChessApp {
         });
     }
 
+    changeTheme(theme) {
+        document.body.classList.remove('theme-forest', 'theme-neon', 'theme-wood', 'theme-glass', 'theme-gold');
+        document.body.classList.add(`theme-${theme}`);
+    }
+
     /**
      * Resets the board, engine state, timers, and active panels.
      */
     resetGame() {
         this.stopTimer();
 
-        // 1. Determine actual color if randomized
-        let assignedColor = this.playerColor;
-        if (this.playerColor === 'random') {
-            assignedColor = Math.random() < 0.5 ? Chess.WHITE : Chess.BLACK;
-        }
-        this.activePlayerColor = assignedColor;
-
-        // 2. Adjust board flip state based on assigned color
-        // If Black, flip the board automatically so they play from bottom
-        if (this.gameMode === 'pve' && this.activePlayerColor === Chess.BLACK) {
-            if (!this.board.isFlipped) this.board.flip();
-        } else {
-            if (this.board.isFlipped) this.board.flip();
+        // Adjust board flip state back to default (White on bottom)
+        if (this.board.isFlipped) {
+            this.board.flip();
         }
 
-        // 3. Reset Engine
+        // Reset Engine
         this.engine.reset();
         this.board.deselect();
         this.board.draw();
 
-        // 4. Reset Clocks
+        // Reset Clocks
         this.resetTimerState();
 
-        // 5. Update Panels
+        // Update Panels
         this.syncGameUi();
-
-        // 6. If PVE and player is Black, trigger initial AI Move
-        if (this.gameMode === 'pve' && this.activePlayerColor === Chess.BLACK) {
-            this.triggerAiMove();
-        }
     }
 
     resetTimerState() {
@@ -262,12 +251,16 @@ class ChessApp {
         // Stop timer temporarily
         this.stopTimer();
 
-        if (this.gameMode === 'pve') {
-            // Revert twice so player gets their turn back (AI move + Player move)
-            this.engine.undoMove();
-            this.engine.undoMove();
-        } else {
-            this.engine.undoMove();
+        this.engine.undoMove();
+
+        // Auto-align flip state to the restored active player's turn if auto-flip is on
+        const autoFlipVal = this.dom.autoFlipSelect.value;
+        if (autoFlipVal === 'yes') {
+            const activeColor = this.engine.activeColor;
+            const expectedFlip = (activeColor === Chess.BLACK);
+            if (this.board.isFlipped !== expectedFlip) {
+                this.board.flip();
+            }
         }
 
         this.board.deselect();
@@ -300,9 +293,14 @@ class ChessApp {
             // Restart Timer
             this.startTimer();
 
-            // Handle AI move trigger
-            if (this.gameMode === 'pve' && this.engine.activeColor !== this.activePlayerColor) {
-                this.triggerAiMove();
+            // Auto-flip if enabled (slight delay to let user see piece land)
+            if (this.dom.autoFlipSelect.value === 'yes') {
+                setTimeout(() => {
+                    const expectedFlip = (this.engine.activeColor === Chess.BLACK);
+                    if (this.board.isFlipped !== expectedFlip) {
+                        this.board.flip();
+                    }
+                }, 500);
             }
         } else {
             // Game Over
@@ -341,35 +339,64 @@ class ChessApp {
     }
 
     /**
-     * Executes async AI search and executes choice.
+     * Prompts the user with a confirmation overlay and returns a Promise resolving to true/false.
      */
-    async triggerAiMove() {
-        // Add visual loading state to UI
-        this.dom.gameStateIndicator.innerHTML = '<span class="pulse">AI is thinking...</span>';
-        this.dom.gameStateIndicator.classList.add('active');
+    showConfirmModal(title, reason) {
+        return new Promise((resolve) => {
+            this.dom.confirmTitle.textContent = title;
+            this.dom.confirmReason.textContent = reason;
+            this.dom.confirmOverlay.classList.remove('hidden');
 
-        const move = await this.ai.getBestMoveAsync(this.engine, this.aiDifficulty);
+            const cleanup = (value) => {
+                this.dom.confirmOverlay.classList.add('hidden');
+                this.dom.confirmYesBtn.removeEventListener('click', onYes);
+                this.dom.confirmNoBtn.removeEventListener('click', onNo);
+                resolve(value);
+            };
 
-        if (move) {
-            const isCapture = (move.captured !== null);
-            const isCastle = (move.flags === 'c');
+            const onYes = () => cleanup(true);
+            const onNo = () => cleanup(false);
 
-            this.engine.makeMove(move);
-            this.board.deselect();
-            this.board.draw();
+            this.dom.confirmYesBtn.addEventListener('click', onYes);
+            this.dom.confirmNoBtn.addEventListener('click', onNo);
+        });
+    }
 
-            // Play synthesized sound
-            if (this.engine.isInCheck(this.engine.activeColor)) {
-                this.board.playSound('check');
-            } else if (isCapture) {
-                this.board.playSound('capture');
-            } else if (isCastle) {
-                this.board.playSound('castle');
-            } else {
-                this.board.playSound('move');
-            }
+    /**
+     * Handles offering a draw.
+     */
+    async promptDrawOffer() {
+        const activeColorStr = (this.engine.activeColor === Chess.WHITE) ? 'White' : 'Black';
+        const opposingColorStr = (this.engine.activeColor === Chess.WHITE) ? 'Black' : 'White';
+        
+        const accepted = await this.showConfirmModal(
+            'Draw Offered',
+            `${activeColorStr} offers a draw. Does ${opposingColorStr} accept?`
+        );
+        
+        if (accepted) {
+            this.stopTimer();
+            this.board.playSound('game-over');
+            this.showGameOverModal('Draw', 'By agreement.');
+        }
+    }
 
-            this.handleMoveCompleted(move);
+    /**
+     * Handles resignation.
+     */
+    async promptResignation() {
+        const activeColorStr = (this.engine.activeColor === Chess.WHITE) ? 'White' : 'Black';
+        const winnerStr = (this.engine.activeColor === Chess.WHITE) ? 'Black' : 'White';
+        
+        const confirmed = await this.showConfirmModal(
+            'Resign Match?',
+            `Are you sure you want to resign as ${activeColorStr}?`
+        );
+        
+        if (confirmed) {
+            this.stopTimer();
+            this.board.playSound('game-over');
+            this.showGameOverModal(`${winnerStr} Wins!`, `${activeColorStr} resigned.`);
         }
     }
 
