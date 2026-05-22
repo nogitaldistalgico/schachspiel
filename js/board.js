@@ -143,10 +143,15 @@ class ChessBoard {
         this.container.appendChild(this.boardEl);
 
         // Draw static squares and coordinates
-        for (let r = 0; r < 8; r++) {
+        for (let r = 7; r >= 0; r--) {
             for (let f = 0; f < 8; f++) {
                 const sq = document.createElement('div');
                 sq.classList.add('square');
+                
+                // Color pattern: a1 (0,0) is dark, h1 (0,7) is light
+                const isLight = (r + f) % 2 !== 0;
+                sq.classList.add(isLight ? 'light' : 'dark');
+                
                 sq.dataset.rank = r;
                 sq.dataset.file = f;
                 this.boardEl.appendChild(sq);
