@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grandmaster Chess — Premium FIDE Chess App</title>
+    <meta name="description" content="Experience a fully compliant FIDE chess game with a high-performance AI engine, smooth animations, customizable clocks, and real-time move validation.">
+    
+    <!-- Premium Stylesheet -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <main class="app-container" id="chess-app-root">
+        
+        <!-- ── LEFT COLUMN: BOARD PLAYGROUND ── -->
+        <section class="board-section">
+            
+            <!-- Top Player Bar (Black Information Panel) -->
+            <div class="player-bar" id="player-bar-black">
+                <div class="player-info">
+                    <span class="player-name" id="name-black">Black Opponent</span>
+                    <div class="captured-pieces" id="captured-white"></div>
+                </div>
+                <div class="game-clock" id="timer-black">10:00</div>
+            </div>
+
+            <!-- Interactive Board Grid Element -->
+            <div id="board-container"></div>
+
+            <!-- Bottom Player Bar (White Information Panel) -->
+            <div class="player-bar" id="player-bar-white">
+                <div class="player-info">
+                    <span class="player-name" id="name-white">White Player</span>
+                    <div class="captured-pieces" id="captured-black"></div>
+                </div>
+                <div class="game-clock" id="timer-white">10:00</div>
+            </div>
+
+        </section>
+
+        <!-- ── RIGHT COLUMN: GAME METADATA & CONTROL DASHBOARD ── -->
+        <section class="control-panel">
+            
+            <div class="panel-header">
+                <h1>Grandmaster Chess</h1>
+                <div class="game-info-badge" id="turn-indicator">White's Turn</div>
+            </div>
+
+            <div id="game-state-indicator"></div>
+
+            <!-- Interactive Match Setup Form -->
+            <div class="settings-section">
+                
+                <div class="setting-row">
+                    <label for="game-mode">Game Mode</label>
+                    <select id="game-mode">
+                        <option value="pvp">Player vs Player (Local)</option>
+                        <option value="pve" selected>Player vs AI (Engine)</option>
+                    </select>
+                </div>
+
+                <div class="setting-row" id="difficulty-group">
+                    <label for="ai-difficulty">AI Difficulty</label>
+                    <select id="ai-difficulty">
+                        <option value="easy">Easy (Depth 1)</option>
+                        <option value="medium" selected>Medium (Depth 2)</option>
+                        <option value="hard">Hard (Depth 3)</option>
+                        <option value="expert">Expert (Depth 4)</option>
+                    </select>
+                </div>
+
+                <div class="setting-row" id="color-group">
+                    <label for="player-color">Play As</label>
+                    <select id="player-color">
+                        <option value="white" selected>White</option>
+                        <option value="black">Black</option>
+                        <option value="random">Random Color</option>
+                    </select>
+                </div>
+
+                <div class="setting-row">
+                    <label for="timer-setting">Time Control</label>
+                    <select id="timer-setting">
+                        <option value="none">No Time Limit</option>
+                        <option value="3+2">Blitz (3 min + 2s inc)</option>
+                        <option value="5+0">Blitz (5 min)</option>
+                        <option value="10+0" selected>Rapid (10 min)</option>
+                        <option value="15+10">Rapid (15 min + 10s inc)</option>
+                        <option value="30+0">Classical (30 min)</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Toolbar Buttons -->
+            <div class="control-buttons">
+                <button class="btn-primary" id="btn-restart">Restart Match</button>
+                <button class="btn-secondary" id="btn-undo">Undo Move</button>
+                <button class="btn-secondary" id="btn-flip" style="grid-column: span 2;">Flip View</button>
+            </div>
+
+            <!-- Live Match Move Log Grid -->
+            <div class="move-log-container">
+                <table class="move-log-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th>White</th>
+                            <th>Black</th>
+                        </tr>
+                    </thead>
+                    <tbody id="move-log-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Import/Export FEN / PGN Clipboard Tool -->
+            <div class="data-io-section">
+                <div class="setting-row">
+                    <label for="fen-io-box">FEN Position String</label>
+                    <div class="io-row">
+                        <input type="text" id="fen-io-box" placeholder="Load or export active board layout FEN...">
+                        <button class="btn-secondary" id="btn-import-fen">Load</button>
+                        <button class="btn-secondary" id="btn-export-fen">Copy</button>
+                    </div>
+                </div>
+
+                <div class="setting-row">
+                    <label for="pgn-io-box">Import PGN Logs</label>
+                    <div class="io-row">
+                        <input type="text" id="pgn-io-box" placeholder="Paste PGN moves sequence...">
+                        <button class="btn-secondary" id="btn-import-pgn">Import</button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ── GAME OVER SYSTEM DIALOG WINDOW (HIDDEN BY DEFAULT) ── -->
+        <div class="overlay-backdrop hidden" id="game-over-overlay">
+            <h2 id="game-over-title">White Wins!</h2>
+            <p id="game-over-reason">By checkmate.</p>
+            <button class="btn-primary" id="btn-game-over-restart" style="margin-top: 10px; padding: 12px 30px;">Play Again</button>
+        </div>
+
+    </main>
+
+    <!-- Chess Application Modular Scripts -->
+    <script src="js/constants.js"></script>
+    <script src="js/pieces.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+</html>
